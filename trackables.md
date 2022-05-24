@@ -61,6 +61,40 @@ tracables属性返回一个集合，你还可以通过TryGetTrackable方法来�
 
 ### Adding and removing trackables
 
-## Plane Detection
+一些trackables，例如anchors和环境探针，可以被手动的添加和删除。其它的trackables，例如planes，是自动添加和删除。有些可以手动添加和创建，如果支持，相关的managers会提供添加和删除的方法。
 
-## Meshing [](#mesh)
+你不能直接Destroy一个trackable组件或者它的GameObject，支持手动删除的trackables，它的providers会提供响应的删除方法。例如要删除anchor，你需要第阿勇ARAnchorManager的RemoveAnchor方法。
+
+当你手动add了一个trackable，底层子系统可能不会立即跟踪它。在子系统报告它将要被添加之前你不会收到他的added事件(通常会是在下一帧)，在手动添加到收到added事件的这段时间，trackable处于”pending“状态，可以在任何trackable上使用pending属性来检测。具体pending状态耗费的时间，是由低层决定的。
+
+当trackable收到移除的通知后，它的manager会Destroy这个tracable的GameObject，除非destroyOnDemoval是false。
+
+![](media/ar-plane.png)
+
+**Deactivating existing trackables**
+
+有时候，你可能想在不关闭manager的情况下停止一个trackable。例如你希望在不停止地面检测的情况下停止地面的渲染，要想实现这一点，可以deactive每个trackable的GameObject:
+
+```C#
+var planeManager = GetComponent<ARPlaneManager>();
+foreach(var plane in planeManager.trackables){
+    plane.gameOBject.SetActive(false);
+}
+```
+
+### Controlling a trackable's GameObject
+
+当一个新的tackable被检测到的时候，它的manager会初始化一个Prefab。这个初始化的GameObject一定要有一个与之类型对应的ARTrackable组件。如果这个Prefab是null，系统会创建一个只包含先关ARTrackable组件的GameObject。如果你的Prefab没有相对的ARTrackable，系统会添加一个。
+
+例如，当plane manager见到一个plane的时候，如果指定了”Plane Prefab“，manager会创建它的GameObject，否则创建一个空的GameObject，然后为其添加ARPlane组件。
+
+## Plane Detection
+## Image Tracking
+## Object Tracking
+## Face Tracking
+## Anchors
+## Raycasts
+## Point Clouds
+## Environment Probes
+## Participants
+## Meshing
