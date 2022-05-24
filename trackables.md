@@ -71,6 +71,8 @@ tracables属性返回一个集合，你还可以通过TryGetTrackable方法来�
 
 ![](media/ar-plane.png)
 
+<p id="donot-destroy"></p>
+
 **Deactivating existing trackables**
 
 有时候，你可能想在不关闭manager的情况下停止一个trackable。例如你希望在不停止地面检测的情况下停止地面的渲染，要想实现这一点，可以deactive每个trackable的GameObject:
@@ -89,7 +91,44 @@ foreach(var plane in planeManager.trackables){
 例如，当plane manager见到一个plane的时候，如果指定了”Plane Prefab“，manager会创建它的GameObject，否则创建一个空的GameObject，然后为其添加ARPlane组件。
 
 ## Plane Detection
+
+### AR plane manager
+plane manager是[trackable manager](trackables#trackable-managers)的一种。
+
+![](media/ar-plane-manager.png)
+
+plane manager为在环境中检测到的每一个plane创建GameObject。一个plane代表一种姿态的平面、尺寸和边界点。边界点是convex的。
+
+这个特性的例子是可以在环境中检测水平桌面、地板、平面，台面和垂直的墙。
+
+你可以指定检测的模式，水平，垂直还是全都要。垂直的面检测在一些平台上需要额外的工作，如果你只是需要水平的面检测，你最好关闭垂直方向的检测。
+
+![](meida/ar-plane-manager-detection-mode.png)
+
+### Responding to planes
+
+面可以添加、删除和更新。在每一帧，AR plane manager都会调用planesChanged事件来返回上一帧中添加、删除和更新的面。
+
+当一个面被检测到，AR Plane Manager会初始化代表这个面的Plane Prefab。这个Prefab可以是null，但是manager会确保初始化的GameObject用于ARPlane组件。ARPlane组件只包含关于检测到的面的数据。
+
+当一个面updated，就好比他的边界顶点发生了变化。你可以订阅面的`ARPlane.boundaryChanged`事件来接收通知。这个事件只会在至少一个边界顶点大于了设置的Vertex Changed Threshold阈值时触发，或者定点数发生了变化。
+
+### Visualizing planes
+
+要实现面的可视化，你需要创建一个包含ARPlane组件的Prefab或者GameObject，订阅它的boundaryChanged事件。ARFoundation提供了一个ARPlaneMeshVisualizer。这个组件会根据边界顶点生成mesh，并将它分配给如果存在的MeshCollider,MeshFilter或者LineRenderer。
+
+创建一个用来生成Prefab的GameObject。。。。 具体的创建过程不再赘述，可以自行参考文档。
+
+### Disabling planes
+
+同[Deactivating existing trackables](#donot-destroy)
+
 ## Image Tracking
+
+### AR tracked image manager
+
+
+
 ## Object Tracking
 ## Face Tracking
 ## Anchors
