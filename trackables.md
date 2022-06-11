@@ -127,7 +127,96 @@ plane manager为在环境中检测到的每一个plane创建GameObject。一个p
 
 ### AR tracked image manager
 
+图像追踪管理器是追踪2D图像的一种类型的trackable manager
 
+![](media/ar-tracked-image-manager.png)
+
+图像追踪管理器为在环境中追踪到的图像创建GameObject，在一个图像可被追踪之前，图像必须被编译到一个图像库当中。manager只能从这个图像库当中检测图片。
+
+### Reference library
+
+如何创建一个图像参考库，请看文档[Tracked Image Subsystem](subsystem#image-tracking)
+
+图像管理库的图片可以在运行时赋值，但要保证manager在enable的时候refrenceLibrary必须非空。
+
+图像库分为[XRReferenceImageLibrary](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARSubsystems.XRReferenceImageLibrary.html) 和 [RuntimeReferenceImageLibrary](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARSubsystems.RuntimeReferenceImageLibrary.html)。你只能在Editor中创建一个图像库，并且不能在运行时改变它。`RuntimeReferenceImageLibrary`是图像库在运行时的一个表现，当你设置了一个图像库引用的时候，image trackaing subsystem会自动转化为`RuntimeReferenceImageLibrary`来使用。
+
+同时你可以可以使用`ARTrackedImageManager.CreateRuntimeLibrary`方法来创建一个`RuntimeReferenceImageLibrary`:
+
+```C#
+XRReferenceImageLibrary serializedLibrary = ...
+RuntimeReferenceImageLibrary runtimeLibrary 
+  = trackedImageManager.CreateRuntimeLibrary(serializedLibrary);
+```
+
+> 在`RuntimeReferenceImageLibrary`中，图片的顺序是无法定义的，也就是说它不能够匹配出图像源在图像库中的顺序。你可以为每个图像源设置一个string name和一个随机的GUID，这个GUID是相同的。
+
+### Using reference image libraries with asset bundles
+
+在4.2版本的ARFoundation中，图像库必须在Player中创建，它只能作为一种打包在app中的用于数据查找的手段。这就意味着在已经发布的app中你不能下载一个新的图像库。但是从4.2版本开始，你可以把图像库作为打入asset bundle来使用。
+
+### Responding to detected images
+
+订阅`ARTrackedImageManager`的`trackedImagesChanged`事件接收图像added(第一次发现),updagted和removed。
+
+``` js
+[SerializeField]
+ARTrackedImageManager m_TrackedImageManager;
+
+void OnEnable() => m_TrackedImageManager.trackedImagesChanged += OnChanged;
+
+void OnDisable() => m_TrackedImageManager.trackedImagesChanged -= OnChanged;
+
+void OnChanged(ARTrackedImagesChangedEventArgs eventArgs) {
+    foreach (var newImage in eventArgs.added) {
+        // Handle added event
+    }
+
+    foreach (var updatedImage in eventArgs.updated) {
+        // Handle updated event
+    }
+
+    foreach (var removedImage in eventArgs.removed) {
+        // Handle removed event
+    }
+}
+```
+
+注意，images可以使用[Tracking State](#tracking-state)来设置跟踪的质量。
+
+一张图片从View范围移走的时候，它可能并没有被"removed"，但是它的tracking state可能发生改变。
+
+你可以使用ARTrackedImageManager的[trackables](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARFoundation.ARTrackableManager-5.html#UnityEngine_XR_ARFoundation_ARTrackableManager_5_trackables)属性来获取当前被追踪到的图片集合，它有点像IEnumerable集合，所以你可以使用foreach语法:
+
+``` js
+void ListAllImages()
+{
+    Debug.Log(
+        $"There are {m_TrackedImageManager.trackables.count} images being tracked.");
+
+    foreach (var trackedImage in m_TrackedImageManager.trackables)
+    {
+        Debug.Log($"Image: {trackedImage.referenceImage.name} is at " +
+                  $"{trackedImage.transform.position}");
+    }
+}
+```
+
+或者使用[TrackableId](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARSubsystems.TrackableId.html)来访问一张特定的图片。
+
+### Tracked Image Prefab
+
+[ARTrackedImageManager](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARFoundation.ARTrackedImageManager.html)有一个"[Tracked Image Prefab](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARFoundation.ARTrackedImageManager.html#UnityEngine_XR_ARFoundation_ARTrackedImageManager_trackedImagePrefab)"字段，当一个图片被识别的时候，ARFoundation会为其创建一个新的GameObject。
+
+如果Prefab是null，ARFoundation会创建一个空的GameObject，并为其添加[ARTrackedImage](https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@5.0/api/UnityEngine.XR.ARFoundation.ARTrackedImage.html)组件。如果你希望每一个被追踪到的图片还包含一些额外的组件，你可以提供一个Prefab来供ARFoundation实例化，换句话说Prefab字段的目的是用来扩展tracked image的默认behavior;这不是一个在场景中创建内容的推荐方式。
+
+！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+如果你想在tracked image的位置实例化content，并且自动的更新位置信息，你需要将content设置为`ARTrackedImage`的父级。
+
+### Adding new reference images at runtime
+
+
+### Tracking State
 
 ## Object Tracking
 ## Face Tracking
